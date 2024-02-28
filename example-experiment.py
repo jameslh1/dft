@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 plt.style.use('nature')
 
 ##### import the DFT class library
-from dft import *
+from dft import *					# provides "takeFFT" class
 
 
-def getdata(filename, t_offset=0.0e-12, normalise=False):
+def getdata(filename, t_offset=0.0e-12, normalise=False, expansion=1):
 	d=loadtxt(filename,comments='%')
 
 	if normalise:
@@ -16,7 +16,7 @@ def getdata(filename, t_offset=0.0e-12, normalise=False):
 		ETHz_raw=d[:,1]
 	x_raw=d[:,0]
 
-	x,ETHz = zeropad(x_raw,ETHz_raw,expansion=2)
+	x,ETHz = zeropad(x_raw,ETHz_raw,expansion=expansion)
 
 	t=(x/0.15-0.0) * 1e-12	# mm to s including offset
 	t=t-t_offset
@@ -40,7 +40,7 @@ def getdata(filename, t_offset=0.0e-12, normalise=False):
 
 
 plot_1=True
-plot_2=True
+plot_2=False
 
 
 ############### EXAMPLE 1: experimental data for reference 7THz from December
@@ -53,6 +53,14 @@ if plot_1:
 	#### take the FFT including phase correction with t0 as the time from the start of the sampling to the peak of the pulse envelope
 	out = takeFFT(t,y, fmax_THz=8.0)
 
+	##### Do EOS response correction by dividing out the frequency-dependent response of the EO crystal.
+	resp = EOSresponse(out.omega,lamGate=800e-9,l=200e-6)
+
+	freqMask=abs(out.freq_THz)<7.6
+	ETHzSpectrum_corrected=(out.y_fft/resp.response)[freqMask]
+	
+	masked_frequency=out.freq_THz[freqMask]
+
 	plt.figure()
 	ax1=plt.subplot(211)
 	ax1.plot(out.time_ps-out.tgroup/1e-12,out.y)
@@ -61,16 +69,18 @@ if plot_1:
 
 	ax1.set_xlabel('Time (ps)')
 	ax1.set_ylabel('$E(t)$ (arb. units)')	
-	ax1.set_xlim(-1,6)
+	ax1.set_xlim(t[0]/1e-12,t[-1]/1e-12)
 
 	ax2=plt.subplot(223)
 	ax2.semilogy(out.freq_THz, out.abs_y_fft)
+	ax2.semilogy(masked_frequency, abs(ETHzSpectrum_corrected))	
 
 	ax2.set_xlabel('Frequency (THz)')
 	ax2.set_ylabel('$|E(f)|$ (arb. units)')		
 
 	ax3=plt.subplot(224)
 	ax3.plot(out.freq_THz, out.angle_y_fft)
+	ax3.plot(masked_frequency, angle(ETHzSpectrum_corrected))	
 
 	ax3.set_ylim(-pi,pi)
 	ax3.set_yticks([-pi,-pi/2,0,pi/2,pi])

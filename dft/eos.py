@@ -112,15 +112,22 @@ class EOSresponse():
 		idx,value=find_nearest(freqTHz,1.0)
 		tcorrect=gdd_response[idx]
 		response=response * exp(-i*self.omega*tcorrect)		# correct the linear phase term so that it doesn't give a time shift.
+
+		fmask1=freqTHz>7.68
+		fmask2=freqTHz<-7.68
+
+		response[fmask1]=1.0+0.0*i			
+		response[fmask2]=1.0+0.0*i
+		self.r41[fmask1]=1.0+0.0*i
+		self.r41[fmask2]=1.0+0.0*i		
 		
 		response=response*self.r41			# total response function including r41
-		
-#		fmask=freqTHz>7.4
-#		response[fmask]=1.0+0.0*i	
-#		fmask=freqTHz<-7.4
-#		response[fmask]=1.0+0.0*i	
+				
 
 		total_response=response*1.0
+		
+#		total_response[fmask1]=1.0e3+0.0*i
+#		total_response[fmask2]=1.0e3+0.0*i		
 		
 		self.geometric_response=response		# group velocity mismatch only
 		self.response=total_response
