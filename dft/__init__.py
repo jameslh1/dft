@@ -9,3 +9,4 @@ __version__ = "0.0.1"
 
 from .maths import *
 from .eos import *
+from .plot import *

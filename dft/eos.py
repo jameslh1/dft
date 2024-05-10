@@ -15,12 +15,14 @@ def find_nearest(array, value):
 
 class EOSresponse():
 
-	def __init__(self,omega,lamGate=800e-9,l=200e-6):
+	def __init__(self,omega,lamGate=800e-9,l=200e-6,fmax_THz=7.68):
 		self.fmax=2.3
 		self.R=500e-6
 		self.l=l
 		self.omega=omega	#[len(omega)/2+1:]
 		self.lamGate=lamGate
+
+		self.fmax_THz=fmax_THz # need to set a maximum frequency over which to apply the filter (before the pole in the response function at about 10THz for GaP), as otherwise division by zero can lead to artefacts
 		
 		self.nGr=3.556
 
@@ -113,18 +115,18 @@ class EOSresponse():
 		tcorrect=gdd_response[idx]
 		response=response * exp(-i*self.omega*tcorrect)		# correct the linear phase term so that it doesn't give a time shift.
 
-		fmask1=freqTHz>7.68
-		fmask2=freqTHz<-7.68
+		fmask1=freqTHz>self.fmax_THz
+		fmask2=freqTHz<-self.fmax_THz
 
 		response[fmask1]=1.0+0.0*i			
 		response[fmask2]=1.0+0.0*i
 		self.r41[fmask1]=1.0+0.0*i
 		self.r41[fmask2]=1.0+0.0*i		
 		
-		response=response*self.r41			# total response function including r41
+#		response=response*self.r41			# total response function including r41
 				
 
-		total_response=response*1.0
+		total_response=response*self.r41	# total response function including r41
 		
 #		total_response[fmask1]=1.0e3+0.0*i
 #		total_response[fmask2]=1.0e3+0.0*i		
