@@ -114,7 +114,7 @@ def plotDualBeamSpectra(data,spectrum_fmax=6.7,ratio_fmax=5.5,ETHz_y_unit='Vm$^{
 	ax1.set_ylabel('$E(t)$ (%s)'% (ETHz_y_unit))
 	ax2.set_ylabel('$E(t)$ (%s)'% (ETHz_y_unit))	
 	ax3.set_ylabel('$|E(\omega)|$ (%s)' % (ETHz_y_unit))
-	ax5.set_ylabel('$|E(\omega)|$ (%s)' % (ETHz_y_unit))	
+	ax5.set_ylabel('$<E(\omega)$ (%s)' % ('radians'))	
 
 	addLabel(ax1,'(a)',position='upper left')
 	addLabel(ax3,'(b)',position='upper right')
