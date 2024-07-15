@@ -2,7 +2,7 @@ from numpy import pi, angle, min, max, abs
 from pylab import figure, axis, subplot, tight_layout
 
 
-def plotTimeDomain(axis,x,y,xunit='ps',**kwargs):
+def plotTimeDomain(axis,x,y,xunit='ps',ylabel='$E_{THz}(t)$ (Vm$^{-1}$)',**kwargs):
 	if xunit=='s':
 		sf=1.0
 	elif xunit=='ps':
@@ -12,7 +12,7 @@ def plotTimeDomain(axis,x,y,xunit='ps',**kwargs):
 	axis.plot((x[0]*sf,x[-1]*sf),(0,0),'k',linewidth=0.5)
 
 	axis.set_xlabel('Time (%s)' % (xunit))
-	axis.set_ylabel('$E_{THz}(t)$ (Vm$^{-1}$)')	
+	axis.set_ylabel(ylabel)	
 
 	return
 	
@@ -25,7 +25,7 @@ def plotSpectrum(axis,fftdata,option='amplitude',**kwargs):
 
 	elif option=='phase':
 		axis.plot(fftdata.freq_THz,fftdata.angle_y_fft,**kwargs)
-		axis.set_ylabel('$<E(\omega)$ (radians)')	
+		axis.set_ylabel('$\phi(\omega)$ (radians)')	
 
 		axis.plot((fftdata.freq_THz[0],fftdata.freq_THz[-1]),(0,0),'k',linewidth=0.5)
 		
@@ -42,11 +42,11 @@ def plotBaseline(axis,fft1,fft2):
 	ratio=fft2.y_fft/fft1.y_fft
 
 	l1,=axis.plot(fft1.freq_THz,abs(ratio))
-	axis.set_ylabel('$|R(\omega)|=|E_2(\omega)/E_1(\omega)|$',color=l1.get_color())
+	axis.set_ylabel('$|Q_b(\omega)|=|E_2(\omega)/E_1(\omega)|$',color=l1.get_color())
 
 	new_ax=axis.twinx()
 	l2,=new_ax.plot(fft1.freq_THz,angle(ratio),'orange')
-	new_ax.set_ylabel('$<R(\omega)$ (radians)',color=l2.get_color())	
+	new_ax.set_ylabel('$<Q_b(\omega)$ (radians)',color=l2.get_color())	
 
 	axis.plot((fft1.freq_THz[0],fft1.freq_THz[-1]),(0,0),'k',linewidth=0.5)
 
@@ -114,7 +114,7 @@ def plotDualBeamSpectra(data,spectrum_fmax=6.7,ratio_fmax=5.5,ETHz_y_unit='Vm$^{
 	ax1.set_ylabel('$E(t)$ (%s)'% (ETHz_y_unit))
 	ax2.set_ylabel('$E(t)$ (%s)'% (ETHz_y_unit))	
 	ax3.set_ylabel('$|E(\omega)|$ (%s)' % (ETHz_y_unit))
-	ax5.set_ylabel('$<E(\omega)$ (%s)' % ('radians'))	
+	ax5.set_ylabel('$\phi(\omega)$ (%s)' % ('radians'))	
 
 	addLabel(ax1,'(a)',position='upper left')
 	addLabel(ax3,'(b)',position='upper right')
