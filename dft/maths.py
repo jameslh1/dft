@@ -57,6 +57,17 @@ def integrateTHzPower(t,ETHz):
 	return integral
 
 
+def meanTime(t,ETHz):
+	#### calculate the first moment of the intensity v time to work out the mean arrival time of the pulse.
+	#  This method works okay if there is one main pulse in the time-domain data set.
+
+	I0=trapz(ETHz**2,x=t)	# work out the normalisation for the intensity
+	I =ETHz**2 / I0			# work out the intensity, normalised such that the integral w.r.t. time is 1
+	
+	meanTime=trapz(t*I,x=t)	# the mean time of the pulse is the first moment of the intensity, i.e. \int t I(t) dt.
+
+	return meanTime			# return the mean time
+	
 
 def timeShift(fftdata,tshift=0.0e-12):
 
@@ -88,7 +99,8 @@ def takeIFFT(omega,E_omega,t0=0.0e-12,dt=0.01e-12):
     
     Em = fft.fft(Ek)/(len(omega)*dt)
     
-    return real(Em)
+#    return real(Em)	# do we need to return the real part only?
+    return Em
 
 
 class takeFFT():
@@ -218,12 +230,15 @@ class takeFFT():
 			self.carrier_freq_THz=self.freq_THz[self.index_max_freq]
 			self.tgroup=self.t_group_delay_dispersion[self.index_max_freq]
 
-		else:								########### default method: find the group delay from the times of the positive and negative peak
+		elif self.group_delay_option==4:	########### method 4: find the group delay from the times of the positive and negative peak
 			index_max_pos_time=argmax(self.y)
 			index_max_neg_time=argmax(-self.y)
 			index_max_time=int(round((index_max_pos_time+index_max_neg_time)/2.0))
 			self.carrier_freq_THz=1.0/(abs(self.t[index_max_pos_time]-self.t[index_max_neg_time])*2)	# t_peak to peak is half of the carrier period, hence x2
 			self.tgroup=self.t[index_max_time]
+
+		else:		####### default method: use the mean time	
+			self.tgroup=meanTime(self.t,self.y)
 
 		if self.group_delay_option==1:
 			print('-- carrier freq = %4.3fTHz' % (self.carrier_freq_THz))
@@ -233,7 +248,7 @@ class takeFFT():
 			print('-- t_group(at %4.3fTHz) = %4.3ffs' % (self.assumedCarrierFreq/1e12,self.tgroup/1e-15))
 		else:
 			print('-- t_group(from time domain) = %4.3ffs' % (self.tgroup/1e-15))
-			print('-- "carrier freq" = 1/t_pkpk = %4.3fTHz' % (self.carrier_freq_THz/1e12))
+#			print('-- "carrier freq" = 1/t_pkpk = %4.3fTHz' % (self.carrier_freq_THz/1e12))
 
 
 

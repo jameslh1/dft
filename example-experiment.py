@@ -32,7 +32,8 @@ def getdata(filename, t_offset=0.0e-12, normalise=False, expansion=1):
 	variance = trapz(integrand,x=t)
 
 	print(filename)
-	print('-- pulse duration (std. dev.) = %4.3ffs' % (sqrt(variance)/1e-15))
+	print('* mean time = %4.3fps' % (mu/1e-12))
+	print('* pulse duration (std. dev.) = %4.3ffs' % (sqrt(variance)/1e-15))
 
 	return t, ETHz, normTHzPower
 	
@@ -49,6 +50,10 @@ if plot_1:
 	THzFilename='purged-7THz-realigned.txt'
 	t_offset=0.079e-12-4e-16
 	t, y, normTHzPower = getdata(THzFilename,t_offset=t_offset,normalise=False)
+
+#	mean_time=meanTime(t,y)
+#	mean_time_str='mean time=%4.3f ps' % (mean_time/1e-12)
+#	print(mean_time_str)
 	
 	#### take the FFT including phase correction with t0 as the time from the start of the sampling to the peak of the pulse envelope
 	out = takeFFT(t,y, fmax_THz=8.0)
@@ -61,6 +66,8 @@ if plot_1:
 	
 	masked_frequency=out.freq_THz[freqMask]
 
+
+	#### plotting routines:
 	plt.figure()
 	ax1=plt.subplot(211)
 	ax1.plot(out.time_ps-out.tgroup/1e-12,out.y)
@@ -97,6 +104,7 @@ if plot_1:
 if plot_2:
 
 	THzFilename='Quartz-1mm-purge-7THz.txt'
+#	t_offset=4e-12
 	t_offset=0.079e-12-4e-16
 	t, y, normTHzPower = getdata(THzFilename,t_offset=t_offset,normalise=False)
 	
