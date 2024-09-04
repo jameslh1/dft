@@ -116,10 +116,11 @@ class takeFFT():
 
 
 	def __init__(self,time,ydata,fmax_THz=None,xunit='s', ret_neg_freq=False, t_offset=0.0, find_max_freq=True, assumedCarrierFreq=1e12,group_delay_option=0):
-		if xunit=='mm':
-			sf=1.0/0.1499
-			xlabel='Frequency (THz)'
-		elif xunit=='ps':
+#		if xunit=='mm':
+#			sf=1.0/0.1499
+#			xlabel='Frequency (THz)'
+#		el
+		if xunit=='ps':
 			sf=1e-12
 			xlabel='Frequency (THz)'
 		else:
