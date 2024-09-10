@@ -47,7 +47,7 @@ plot_2=False
 ############### EXAMPLE 1: experimental data for reference 7THz from December
 if plot_1:
 
-	THzFilename='purged-7THz-realigned.txt'
+	THzFilename='example-experiment-THz-pulse.txt'
 	t_offset=0.079e-12-4e-16
 	t, y, normTHzPower = getdata(THzFilename,t_offset=t_offset,normalise=False)
 
@@ -98,24 +98,6 @@ if plot_1:
 	plt.tight_layout()
 
 
-
-
-############### EXAMPLE 2: experimental data for quartz from December
-if plot_2:
-
-	THzFilename='Quartz-1mm-purge-7THz.txt'
-#	t_offset=4e-12
-	t_offset=0.079e-12-4e-16
-	t, y, normTHzPower = getdata(THzFilename,t_offset=t_offset,normalise=False)
-	
-	#### take the FFT including phase correction with t0 as the time from the start of the sampling to the peak of the pulse envelope
-	out = takeFFT(t,y, fmax_THz=8.0)
-
-	ax1.plot(out.time_ps,out.y)
-	ax1.plot(out.tgroup/1e-12,0.0,'ko')
-#	ax1.plot(out.time_ps-out.tgroup/1e-12,out.y)	
-	ax2.semilogy(out.freq_THz, out.abs_y_fft)
-	ax3.plot(out.freq_THz, out.angle_y_fft)
 
 
 

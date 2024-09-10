@@ -1,0 +1,114 @@
+from numpy import pi, linspace, exp, gradient, cosh, sin, sqrt, real, imag
+
+import matplotlib.pyplot as plt
+plt.style.use('nature')
+
+##### import the DFT class library
+import dft
+
+i=complex(0,1)
+
+plot_example_1=True
+
+
+############### EXAMPLE 1: Gaussian centred at time zero and a smaller one at 1.0ps
+if plot_example_1:
+
+	n=2000						# number of discrete samples
+	t_start = -20e-12			# start of the time window
+	t_end = 20e-12				# end of the time window
+
+	t=linspace(t_start,t_end,n)
+
+	#### pulse parameters
+	t_pulse1 = 0e-12				# centre of the simulated pulse 1
+	t_pulse2 = 0e-12				# centre of the simulated pulse 1	
+	sigma=0.1e-12
+
+#	y =1.0*exp(-(t-t_pulse1)**2  / (2.0*sigma**2))			# simulated pulse
+#	y2=1.0*exp(-(t-t_pulse2)**2  / (2.0*sigma**2))		# simulated pulse	
+#	y =1.0/cosh((t-t_pulse1)/sigma)
+#	y2=1.0/cosh((t-t_pulse2)/sigma)
+	omega_c=2*pi*1e12
+	tCEP=125e-15
+
+	y =1.0/cosh((t-t_pulse1)/sigma)*-1.0 * sin(omega_c*(t-tCEP))
+	y2=1.0/cosh((t-t_pulse2)/sigma)*-1.0 * sin(omega_c*t)
+
+#	y=gradient(y)
+#	y2=gradient(y2)
+	y=y/max(y)
+	y2=y2/max(y2)
+
+	#### take the FFT including phase correction with t0 as the time from the start of the sampling to the peak of the pulse envelope
+	out  = dft.takeFFT(t,y , fmax_THz=8.0)
+	out2 = dft.takeFFT(t,y2, fmax_THz=8.0)
+
+	#### return the time-domain data from the FFT data
+	input_omega=out.full_omega		 # omega
+	input_E_omega=out.full_y_fft	 # E(omega)
+	input_E_omega2=out2.full_y_fft	 # E(omega)	
+
+	mask=0.0*input_omega
+	for m in range(len(input_omega)):
+		if input_omega[m]>=0.0:
+			mask[m]=1.0
+			
+	output_E_omega =2*mask*input_E_omega
+	output_E_omega2=2*mask*input_E_omega2
+
+	phi=omega_c*tCEP	
+	t0=out.t0						 # need to know this to get Ek back (from E(omega))
+	dt=out.dt						 # need to know this to get amplitude scaling correct
+	E_THz_recovered =dft.takeIFFT(input_omega,output_E_omega,t0=t0,dt=dt)
+	E_THz_recovered =real(E_THz_recovered)
+	E_THz_recovered2=dft.takeIFFT(input_omega,output_E_omega2,t0=out2.t0,dt=out2.dt)
+	E_THz_recovered2=real(E_THz_recovered2*exp(i*phi))			# change the phase
+
+	fftOut  = dft.takeFFT(t,E_THz_recovered, fmax_THz=8.0)
+	fftOut2 = dft.takeFFT(t,E_THz_recovered2, fmax_THz=8.0)	
+
+	plt.figure(figsize=(12,6))
+	ax1=plt.subplot(211)
+#	ax1.plot(out.time_ps ,out.y ,label='model $E_1(t)$')
+#	ax1.plot(out2.time_ps,out2.y,label='model $E_2(t)$')
+	
+	ax1.plot(out.time_ps ,E_THz_recovered /max(E_THz_recovered) ,label='DFT$^{-1}$[$E_1(\omega)$]')	
+	ax1.plot(out2.time_ps,E_THz_recovered2/max(E_THz_recovered2),label='DFT$^{-1}$[$E_2(\omega)$]')		
+	ax1.plot(out.tgroup/1e-12,0.0,'ko')
+	ax1.plot(out2.tgroup/1e-12,0.0,'ko')
+	
+	ax1.set_xlabel('Time (ps)')
+	ax1.set_ylabel('$E(t)$ (arb. units)')	
+	ax1.set_xlim(-1,3)
+	ax1.legend(loc=1)
+	
+
+	ax2=plt.subplot(223)
+#	ax2.semilogy(out.freq_THz, out.abs_y_fft)
+#	ax2.plot(out2.freq_THz, out2.abs_y_fft)	
+
+	ax2.semilogy(fftOut.freq_THz, fftOut2.abs_y_fft)	
+	ax2.plot(fftOut2.freq_THz, fftOut2.abs_y_fft)	
+	
+	ax2.set_xlabel('Frequency (THz)')
+	ax2.set_ylabel('$|E(f)|$ (arb. units)')		
+
+	ax3=plt.subplot(224)
+	ax3.plot(out.freq_THz, out.angle_y_fft)
+	ax3.plot(out2.freq_THz, out2.angle_y_fft)
+	
+	ax3.plot(fftOut.freq_THz, fftOut.angle_y_fft)
+	ax3.plot(fftOut2.freq_THz, fftOut2.angle_y_fft)
+	
+	ax3.set_ylim(-pi,pi)
+	ax3.set_yticks([-pi,-pi/2,0,pi/2,pi])
+	ax3.set_yticklabels(['-$\pi$','-$\pi/2$','$0$','$\pi/2$','$\pi$'])
+	ax3.set_xlabel('Frequency (THz)')
+	ax3.set_ylabel('arg$[E(f)]$ (radians)')		
+
+	plt.tight_layout()
+
+plt.show()
+
+
