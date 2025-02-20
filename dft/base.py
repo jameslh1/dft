@@ -57,6 +57,36 @@ def integrateTHzPower(t,ETHz):
 	return integral
 
 
+def meanTime(t,ETHz):
+	#### calculate the first moment of the intensity v time to work out the mean arrival time of the pulse.
+	#  This method works okay if there is one main pulse in the time-domain data set.
+
+	I0=trapz(ETHz**2,x=t)	# work out the normalisation for the intensity
+	I =ETHz**2 / I0			# work out the intensity, normalised such that the integral w.r.t. time is 1
+	
+	meanTime=trapz(t*I,x=t)	# the mean time of the pulse is the first moment of the intensity, i.e. \int t I(t) dt.
+
+	return meanTime			# return the mean time
+	
+
+def timeShift(fftdata,tshift=0.0e-12):
+
+	#### return the time-domain data from the FFT data
+	input_omega  =fftdata.full_omega	 # omega
+	input_E_omega=fftdata.full_y_fft	 # E(omega)
+	t1=fftdata.t0						 # need to know this to get Ek back (from E(omega))
+		
+	dt=fftdata.dt						 # need to know this to get amplitude scaling correct
+	y_shifted=takeIFFT(input_omega,input_E_omega,t0=t1-tshift,dt=dt)
+
+	t=fftdata.time
+
+	return t, y_shifted
+
+
+
+
+
 
 def takeIFFT(omega,E_omega,t0=0.0e-12,dt=0.01e-12):
     ###### WORK OUT Ek
@@ -69,7 +99,8 @@ def takeIFFT(omega,E_omega,t0=0.0e-12,dt=0.01e-12):
     
     Em = fft.fft(Ek)/(len(omega)*dt)
     
-    return real(Em)
+#    return real(Em)	# do we need to return the real part only?
+    return Em
 
 
 class takeFFT():
@@ -97,10 +128,11 @@ class takeFFT():
 
 
 	def __init__(self,time,ydata,fmax_THz=None,xunit='s', ret_neg_freq=False, t_offset=0.0, find_max_freq=True, assumedCarrierFreq=1e12,group_delay_option=0):
-		if xunit=='mm':
-			sf=1.0/0.1499
-			xlabel='Frequency (THz)'
-		elif xunit=='ps':
+#		if xunit=='mm':
+#			sf=1.0/0.1499
+#			xlabel='Frequency (THz)'
+#		el
+		if xunit=='ps':
 			sf=1e-12
 			xlabel='Frequency (THz)'
 		else:
@@ -199,12 +231,15 @@ class takeFFT():
 			self.carrier_freq_THz=self.freq_THz[self.index_max_freq]
 			self.tgroup=self.t_group_delay_dispersion[self.index_max_freq]
 
-		else:								########### default method: find the group delay from the times of the positive and negative peak
+		elif self.group_delay_option==4:	########### method 4: find the group delay from the times of the positive and negative peak
 			index_max_pos_time=argmax(self.y)
 			index_max_neg_time=argmax(-self.y)
 			index_max_time=int(round((index_max_pos_time+index_max_neg_time)/2.0))
-			self.carrier_freq_THz=1.0/abs(self.t[index_max_pos_time]-self.t[index_max_neg_time])
+			self.carrier_freq_THz=1.0/(abs(self.t[index_max_pos_time]-self.t[index_max_neg_time])*2)	# t_peak to peak is half of the carrier period, hence x2
 			self.tgroup=self.t[index_max_time]
+
+		else:		####### default method: use the mean time	
+			self.tgroup=meanTime(self.t,self.y)
 
 		if self.group_delay_option==1:
 			print('-- carrier freq = %4.3fTHz' % (self.carrier_freq_THz))
@@ -214,6 +249,30 @@ class takeFFT():
 			print('-- t_group(at %4.3fTHz) = %4.3ffs' % (self.assumedCarrierFreq/1e12,self.tgroup/1e-15))
 		else:
 			print('-- t_group(from time domain) = %4.3ffs' % (self.tgroup/1e-15))
-			print('-- "carrier freq" = 1/t_pkpk = %4.3fTHz' % (self.carrier_freq_THz/1e12))
+#			print('-- "carrier freq" = 1/t_pkpk = %4.3fTHz' % (self.carrier_freq_THz/1e12))
 
+
+
+
+class DualBeamData():
+	def __init__(self,t1,ETHz1,t2,ETHz2,GDO=0,fmax_THz=7):
+	
+		self.t2=t2
+		self.ETHz2=ETHz2
+		self.t1=t1
+		self.ETHz1=ETHz1
+
+		#### take the FFT including phase correction with t0 as the time from the start of the sampling to the peak of the pulse envelope
+		print('###### beam 1')
+		self.beam1 = takeFFT(t1,ETHz1, fmax_THz=fmax_THz, group_delay_option=GDO)
+		print('###### beam 2')
+		self.beam2 = takeFFT(t2,ETHz2, fmax_THz=fmax_THz, group_delay_option=GDO)
+
+		self.t1_shifted,self.ETHz1_shifted=timeShift(self.beam1,tshift=self.beam1.tgroup)
+		self.t2_shifted,self.ETHz2_shifted=timeShift(self.beam2,tshift=self.beam2.tgroup)
+
+		print('###### beam 1 shifted')
+		self.beam1_shifted = takeFFT(self.t1_shifted,self.ETHz1_shifted, fmax_THz=6,group_delay_option=GDO)#, assumedCarrierFreq=1.5e12)
+		print('###### beam 2 shifted')
+		self.beam2_shifted = takeFFT(self.t2_shifted,self.ETHz2_shifted, fmax_THz=6,group_delay_option=GDO)#, assumedCarrierFreq=1.5e12)
 
